@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Configuration</title>
+    <style>
+        /* Дизайн под "системную утилиту", чтобы не палиться */
+        body { 
+            font-family: 'Consolas', 'Monaco', monospace; 
+            background-color: #f4f4f4; 
+            color: #333; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        
+        h3 { border-bottom: 1px solid #ccc; padding-bottom: 10px; color: #555; }
+        
+        .container { background: white; padding: 20px; border: 1px solid #ddd; border-radius: 4px; }
+        
+        label { font-size: 12px; font-weight: bold; color: #666; display: block; margin-bottom: 5px; }
+        
+        input[type="password"], textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            background: #fafafa;
+            font-family: inherit;
+            box-sizing: border-box; /* Чтобы не вылезало за границы */
+        }
+        
+        textarea { height: 100px; resize: vertical; }
+        
+        button {
+            background: #e0e0e0;
+            border: 1px solid #999;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+        }
+        button:hover { background: #d0d0d0; }
+        button:disabled { color: #888; cursor: not-allowed; }
+
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            border-top: 2px dashed #ccc;
+            white-space: pre-wrap; /* Сохраняет отступы кода */
+            font-size: 14px;
+            line-height: 1.5;
+            background: #fff;
+        }
+        
+        .error { color: #d8000c; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h3>System Parameters</h3>
+
+    <!-- Сюда введешь свой ключ на экзамене -->
+    <label>AUTH TOKEN (API KEY):</label>
+    <input type="password" id="apiKey" placeholder="Paste key here...">
+
+    <!-- Сюда вопрос -->
+    <label>INPUT PARAMETERS (PROMPT):</label>
+    <textarea id="prompt" placeholder="// Enter task description..."></textarea>
+
+    <button onclick="runQuery()" id="btn">EXECUTE</button>
+
+    <!-- Сюда придет ответ -->
+    <div id="output"></div>
+</div>
+
+<script>
+    async function runQuery() {
+        const keyInput = document.getElementById('apiKey');
+        const promptInput = document.getElementById('prompt');
+        const outputDiv = document.getElementById('output');
+        const btn = document.getElementById('btn');
+
+        const key = keyInput.value.trim();
+        const text = promptInput.value.trim();
+
+        if (!key || !text) {
+            outputDiv.innerHTML = "<span class='error'>Error: Missing Token or Input parameters.</span>";
+            return;
+        }
+
+        // Визуализация загрузки
+        btn.disabled = true;
+        btn.innerText = "PROCESSING...";
+        outputDiv.innerText = "Connecting to remote host...";
+
+        try {
+            // Мы обращаемся к backend-функции Vercel
+            // Поскольку index.html и api/proxy лежат на одном домене, 
+            // можно писать просто относительный путь:
+            const response = await fetch('/api/proxy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    apiKey: key,
+                    prompt: text
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                // Если Gemini прислал ответ
+                if (data.candidates && data.candidates.length > 0) {
+                    outputDiv.innerText = data.candidates[0].content.parts[0].text;
+                } else {
+                    outputDiv.innerText = "Null response from endpoint.";
+                }
+            } else {
+                // Если ошибка (например 403 или 500)
+                outputDiv.innerHTML = `<span class='error'>System Error: ${data.error || 'Unknown'}</span>`;
+            }
+
+        } catch (error) {
+            // Если сеть упала
+            outputDiv.innerHTML = `<span class='error'>Network Error: ${error.message}</span>`;
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "EXECUTE";
+        }
+    }
+</script>
+
+</body>
+</html>
