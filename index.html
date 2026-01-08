@@ -86,21 +86,21 @@
         const key = keyInput.value.trim();
         const text = promptInput.value.trim();
 
+        // Убираем лишние пробелы в ключе, если случайно скопировал
         if (!key || !text) {
             outputDiv.innerHTML = "<span class='error'>Error: Missing Token or Input parameters.</span>";
             return;
         }
 
-        // Визуализация загрузки
         btn.disabled = true;
         btn.innerText = "PROCESSING...";
         outputDiv.innerText = "Connecting to remote host...";
 
         try {
-            // Мы обращаемся к backend-функции Vercel
-            // Поскольку index.html и api/proxy лежат на одном домене, 
-            // можно писать просто относительный путь:
-            const response = await fetch('/api/proxy', {
+            // ВСТАВЬ СЮДА СВОЙ ПОЛНЫЙ ДОМЕН ИЗ VERCEL
+            const vercelUrl = 'https://ml-ekz.vercel.app/api/proxy'; 
+            
+            const response = await fetch(vercelUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -112,20 +112,21 @@
             const data = await response.json();
 
             if (response.ok) {
-                // Если Gemini прислал ответ
+                // Проверяем, есть ли ответ от Gemini
                 if (data.candidates && data.candidates.length > 0) {
                     outputDiv.innerText = data.candidates[0].content.parts[0].text;
                 } else {
-                    outputDiv.innerText = "Null response from endpoint.";
+                    // ЕСЛИ ОТВЕТ ПУСТОЙ - ПОКАЗЫВАЕМ ПОЧЕМУ
+                    console.log("Full Response:", data); // Смотри в консоль (F12) если можешь
+                    outputDiv.innerHTML = `<span class='error'>Debug Info (Server replied OK but no text):<br>${JSON.stringify(data, null, 2)}</span>`;
                 }
             } else {
-                // Если ошибка (например 403 или 500)
-                outputDiv.innerHTML = `<span class='error'>System Error: ${data.error || 'Unknown'}</span>`;
+                // Ошибка сервера (4xx, 5xx)
+                outputDiv.innerHTML = `<span class='error'>Server Error (${response.status}): ${data.error || JSON.stringify(data)}</span>`;
             }
 
         } catch (error) {
-            // Если сеть упала
-            outputDiv.innerHTML = `<span class='error'>Network Error: ${error.message}</span>`;
+            outputDiv.innerHTML = `<span class='error'>Network/Fetch Error: ${error.message}</span>`;
         } finally {
             btn.disabled = false;
             btn.innerText = "EXECUTE";
