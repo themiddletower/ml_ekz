@@ -40,10 +40,10 @@ export default async function handler(req, res) {
         model: MODEL_NAME,
         messages: [
           // Системный промпт (можно сказать ему отвечать кратко)
-          { role: "system", content: "You are a helpful assistant. Answer in Russian unless asked otherwise." },
+          { role: "system", content: "You are a helpful assistant." },
           { role: "user", content: prompt }
         ],
-        temperature: 0.5
+        "stream": false
       })
     });
 
