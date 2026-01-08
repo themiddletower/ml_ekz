@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     if (!apiKey || !prompt) {
       return res.status(400).json({ error: 'Нет ключа или текста вопроса' });
     }
-    const modelName = 'gemini-1.5-flash'; 
+    const modelName = 'gemini-2.0-flash'; 
     // 2. Запрос к Google Gemini (Умная модель 1.5 Pro)
     const googleUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
