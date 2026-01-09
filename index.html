@@ -1,137 +1,203 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Configuration</title>
-    <style>
-        /* Дизайн под "системную утилиту", чтобы не палиться */
-        body { 
-            font-family: 'Consolas', 'Monaco', monospace; 
-            background-color: #f4f4f4; 
-            color: #333; 
-            max-width: 800px; 
-            margin: 0 auto; 
-            padding: 20px; 
-        }
-        
-        h3 { border-bottom: 1px solid #ccc; padding-bottom: 10px; color: #555; }
-        
-        .container { background: white; padding: 20px; border: 1px solid #ddd; border-radius: 4px; }
-        
-        label { font-size: 12px; font-weight: bold; color: #666; display: block; margin-bottom: 5px; }
-        
-        input[type="password"], textarea {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            background: #fafafa;
-            font-family: inherit;
-            box-sizing: border-box; /* Чтобы не вылезало за границы */
-        }
-        
-        textarea { height: 100px; resize: vertical; }
-        
-        button {
-            background: #e0e0e0;
-            border: 1px solid #999;
-            padding: 8px 16px;
-            cursor: pointer;
-            font-family: inherit;
-            font-weight: bold;
-        }
-        button:hover { background: #d0d0d0; }
-        button:disabled { color: #888; cursor: not-allowed; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notebook Viewer</title>
 
-        #output {
-            margin-top: 20px;
-            padding: 15px;
-            border-top: 2px dashed #ccc;
-            white-space: pre-wrap; /* Сохраняет отступы кода */
-            font-size: 14px;
-            line-height: 1.5;
-            background: #fff;
-        }
-        
-        .error { color: #d8000c; }
-    </style>
+<style>
+:root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --border: #30363d;
+    --text: #c9d1d9;
+    --muted: #8b949e;
+    --accent: #238636;
+    --danger: #f85149;
+    --input: #0d1117;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 14px;
+}
+
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+/* ===== Notebook Cell ===== */
+
+.cell {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.cell-header {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.cell-body {
+    padding: 12px;
+}
+
+/* ===== Inputs ===== */
+
+label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+}
+
+input[type="password"],
+textarea {
+    width: 100%;
+    background: var(--input);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    font-family: inherit;
+    font-size: 13px;
+}
+
+textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+input:focus,
+textarea:focus {
+    outline: none;
+    border-color: #58a6ff;
+}
+
+/* ===== Button ===== */
+
+button {
+    margin-top: 10px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+button:hover {
+    filter: brightness(1.1);
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ===== Output ===== */
+
+.output {
+    background: #010409;
+    border-top: 1px solid var(--border);
+    padding: 12px;
+    white-space: pre-wrap;
+    line-height: 1.5;
+}
+
+.error {
+    color: var(--danger);
+}
+</style>
 </head>
+
 <body>
-
 <div class="container">
-    <h3>System Parameters</h3>
 
-    <!-- Сюда введешь свой ключ на экзамене -->
-    <label>AUTH TOKEN (API KEY):</label>
-    <input type="password" id="apiKey" placeholder="Paste key here...">
+    <!-- INPUT CELL -->
+    <div class="cell">
+        <div class="cell-header">In [1]</div>
+        <div class="cell-body">
 
-    <!-- Сюда вопрос -->
-    <label>INPUT PARAMETERS (PROMPT):</label>
-    <textarea id="prompt" placeholder="// Enter task description..."></textarea>
+            <label>API TOKEN</label>
+            <input type="password" id="apiKey" placeholder="••••••••••">
 
-    <button onclick="runQuery()" id="btn">EXECUTE</button>
+            <label>PROMPT</label>
+            <textarea id="prompt" placeholder="# Enter your task here"></textarea>
 
-    <!-- Сюда придет ответ -->
-    <div id="output"></div>
+            <button id="btn" onclick="runQuery()">Run</button>
+
+        </div>
+    </div>
+
+    <!-- OUTPUT CELL -->
+    <div class="cell">
+        <div class="cell-header">Out [1]</div>
+        <div class="output" id="output">
+            Ready.
+        </div>
+    </div>
+
 </div>
 
 <script>
-    async function runQuery() {
-        const keyInput = document.getElementById('apiKey');
-        const promptInput = document.getElementById('prompt');
-        const outputDiv = document.getElementById('output');
-        const btn = document.getElementById('btn');
+async function runQuery() {
+    const key = apiKey.value.trim();
+    const text = prompt.value.trim();
+    const output = document.getElementById('output');
+    const btn = document.getElementById('btn');
 
-        const key = keyInput.value.trim();
-        const text = promptInput.value.trim();
+    if (!key || !text) {
+        output.innerHTML = "<span class='error'>Error: missing token or prompt</span>";
+        return;
+    }
 
-        // Убираем лишние пробелы в ключе, если случайно скопировал
-        if (!key || !text) {
-            outputDiv.innerHTML = "<span class='error'>Error: Missing Token or Input parameters.</span>";
-            return;
-        }
+    btn.disabled = true;
+    btn.innerText = "Running...";
+    output.innerText = "Executing cell...";
 
-        btn.disabled = true;
-        btn.innerText = "PROCESSING...";
-        outputDiv.innerText = "Connecting to remote host...";
-
-        try {
-            // ВСТАВЬ СЮДА СВОЙ ПОЛНЫЙ ДОМЕН ИЗ VERCEL
-            const vercelUrl = 'https://ml-ekz.vercel.app/api/proxy'; 
-            
-            const response = await fetch(vercelUrl, {
+    try {
+        const response = await fetch(
+            'https://ml-ekz.vercel.app/api/proxy',
+            {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    apiKey: key,
-                    prompt: text
-                })
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                // Проверяем, есть ли ответ от Gemini
-                if (data.candidates && data.candidates.length > 0) {
-                    outputDiv.innerText = data.candidates[0].content.parts[0].text;
-                } else {
-                    // ЕСЛИ ОТВЕТ ПУСТОЙ - ПОКАЗЫВАЕМ ПОЧЕМУ
-                    console.log("Full Response:", data); // Смотри в консоль (F12) если можешь
-                    outputDiv.innerHTML = `<span class='error'>Debug Info (Server replied OK but no text):<br>${JSON.stringify(data, null, 2)}</span>`;
-                }
-            } else {
-                // Ошибка сервера (4xx, 5xx)
-                outputDiv.innerHTML = `<span class='error'>Server Error (${response.status}): ${data.error || JSON.stringify(data)}</span>`;
+                body: JSON.stringify({ apiKey: key, prompt: text })
             }
+        );
 
-        } catch (error) {
-            outputDiv.innerHTML = `<span class='error'>Network/Fetch Error: ${error.message}</span>`;
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "EXECUTE";
+        const data = await response.json();
+
+        if (response.ok && data?.candidates?.length) {
+            output.innerText = data.candidates[0].content.parts[0].text;
+        } else {
+            output.innerHTML = "<span class='error'>Empty output</span>\n" +
+                JSON.stringify(data, null, 2);
         }
+
+    } catch (e) {
+        output.innerHTML = <span class="error">Runtime error: ${e.message}</span>;
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Run";
     }
+}
 </script>
 
 </body>
