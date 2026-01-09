@@ -1,82 +1,119 @@
 <!DOCTYPE html>
-<html lang="en" data-color-mode="light" data-light-theme="light" data-dark-theme="dark">
+<html lang="en" data-color-mode="dark" data-light-theme="dark" data-dark-theme="dark">
 <head>
     <meta charset="utf-8">
     <title>1_lab_classification.ipynb at main · ml_ekz</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://unpkg.com/@primer/css@20.4.2/dist/primer.css" rel="stylesheet" />
     <style>
-        body { background-color: #ffffff; color: #1f2328; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif; }
+        /* GITHUB DARK THEME COLORS */
+        :root {
+            --bg-canvas: #0d1117;
+            --bg-canvas-subtle: #161b22;
+            --border-default: #30363d;
+            --fg-default: #c9d1d9;
+            --fg-muted: #8b949e;
+            --accent-fg: #58a6ff;
+            --danger-fg: #ff7b72;
+            --btn-bg: #21262d;
+            --input-bg: #010409;
+        }
+
+        body { background-color: var(--bg-canvas); color: var(--fg-default); font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif; margin: 0; }
         .container-lg { max-width: 1012px; margin: 0 auto; padding: 20px; }
-        .Box { background-color: #ffffff; border: 1px solid #d0d7de; border-radius: 6px; }
-        .Box-header { background-color: #f6f8fa; border-bottom: 1px solid #d0d7de; padding: 16px; border-top-left-radius: 6px; border-top-right-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Основной контейнер */
+        .Box { background-color: var(--bg-canvas); border: 1px solid var(--border-default); border-radius: 6px; }
+        .Box-header { background-color: var(--bg-canvas-subtle); border-bottom: 1px solid var(--border-default); padding: 16px; border-top-left-radius: 6px; border-top-right-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
         .Box-body { padding: 20px; font-family: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace; font-size: 14px; line-height: 1.5; overflow-x: auto; }
         
-        /* Имитация Jupyter Notebook */
-        .notebook-cell { margin-bottom: 10px; display: flex; flex-direction: column; }
+        /* Jupyter Notebook Styles */
+        .notebook-cell { margin-bottom: 15px; display: flex; flex-direction: column; }
         .input-area { display: flex; align-items: flex-start; margin-bottom: 5px; }
-        .prompt { color: #0969da; min-width: 60px; padding-top: 5px; font-family: monospace; user-select: none; }
+        
+        /* Цвет In [ ]: Синий */
+        .prompt { color: var(--accent-fg); min-width: 65px; padding-top: 5px; font-family: monospace; user-select: none; font-size: 13px; }
+        
+        /* Цвет Out [ ]: Красный/Розовый */
+        .out-prompt { color: var(--danger-fg); min-width: 65px; font-family: monospace; user-select: none; font-size: 13px; }
+        
         .input-box { flex-grow: 1; position: relative; }
         
-        /* Поле ввода вопроса (замаскировано под код) */
+        /* Поле ввода вопроса (выглядит как код) */
         textarea#question-input {
             width: 100%;
-            border: 1px solid #d0d7de;
-            background-color: #f6f8fa;
-            border-radius: 4px;
-            padding: 8px;
-            font-family: monospace;
+            border: 1px solid var(--border-default);
+            background-color: var(--input-bg);
+            border-radius: 6px;
+            padding: 10px;
+            font-family: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace;
             min-height: 60px;
             resize: vertical;
             outline: none;
-            color: #1f2328;
+            color: var(--fg-default);
+            line-height: 1.45;
         }
-        textarea#question-input:focus { border-color: #0969da; box-shadow: 0 0 0 3px rgba(9,105,218,0.3); background: #fff; }
+        textarea#question-input:focus { border-color: var(--accent-fg); box-shadow: 0 0 0 1px var(--accent-fg); }
 
-        /* Кнопка запуска (выглядит как ui элемент) */
+        /* Кнопка запуска */
         .run-btn {
             position: absolute;
-            right: 10px;
-            top: 10px;
-            background: none;
+            right: 8px;
+            top: 8px;
+            background: transparent;
             border: none;
             cursor: pointer;
-            opacity: 0.5;
+            color: var(--fg-muted);
+            padding: 4px;
+            border-radius: 4px;
         }
-        .run-btn:hover { opacity: 1; color: #1f883d; }
+        .run-btn:hover { background-color: var(--btn-bg); color: var(--fg-default); }
 
         /* Ответ ИИ */
-        .output-wrapper { display: flex; margin-top: 5px; display: none; } /* Скрыто по умолчанию */
-        .out-prompt { color: #d1242f; min-width: 60px; font-family: monospace; user-select: none; }
-        .output-content { white-space: pre-wrap; color: #1f2328; flex-grow: 1; }
+        .output-wrapper { display: flex; margin-top: 5px; display: none; }
+        .output-content { white-space: pre-wrap; color: var(--fg-default); flex-grow: 1; font-family: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace;}
 
-        /* Верхнее меню (маскировка поля ключа) */
+        /* Верхнее меню и поле ключа */
+        .header-bg { background-color: var(--bg-canvas-subtle); border-bottom: 1px solid var(--border-default); padding: 16px; margin-bottom: 20px; }
+        .repo-link { font-weight: 600; font-size: 14px; color: var(--accent-fg); text-decoration: none; }
+        .repo-text { color: var(--fg-default); margin: 0 4px; }
+        
         .header-search { position: relative; width: 300px; }
         #api-key-input { 
             width: 100%; 
             padding: 5px 12px; 
-            border: 1px solid #d0d7de; 
+            border: 1px solid var(--border-default); 
             border-radius: 6px; 
-            font-size: 14px; 
-            background: #f6f8fa;
+            font-size: 13px; 
+            background: var(--btn-bg);
+            color: var(--fg-default);
+            outline: none;
         }
-        #api-key-input.key-saved { border-color: #2da44e; background-color: #dafbe1; color: transparent; text-shadow: 0 0 0 #2da44e; }
+        #api-key-input:focus { border-color: var(--accent-fg); background: var(--input-bg); }
         
-        /* Markdown рендеринг (простой) */
-        .output-content strong { font-weight: bold; }
-        .output-content code { background: #eff1f3; padding: 2px 4px; border-radius: 4px; }
+        /* Зеленая индикация если ключ сохранен */
+        #api-key-input.key-saved { border-color: #238636; background-color: rgba(46, 160, 67, 0.15); color: transparent; text-shadow: 0 0 0 #3fb950; }
+        
+        /* Markdown элементы в ответе */
+        .output-content code { background: rgba(110, 118, 129, 0.4); padding: 3px 6px; border-radius: 4px; font-size: 85%; }
+        .output-content pre { background: var(--bg-canvas-subtle); padding: 10px; border-radius: 6px; overflow-x: auto; border: 1px solid var(--border-default); }
     </style>
 </head>
 <body>
 
-<!-- Верхняя шапка как на GitHub -->
-<div style="background: #f6f8fa; border-bottom: 1px solid #d0d7de; padding: 16px; margin-bottom: 20px;">
+<!-- Верхняя шапка -->
+<div class="header-bg">
     <div class="container-lg" style="padding: 0; display: flex; align-items: center; justify-content: space-between;">
         <div style="display: flex; align-items: center; gap: 8px;">
-            <svg height="32" viewBox="0 0 16 16" version="1.1" width="32" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
-            <span style="font-weight: 600; font-size: 14px;">themiddletower</span> / <span style="font-weight: 600; font-size: 14px;">ml_ekz</span>
+            <!-- Логотип GitHub (белый) -->
+            <svg height="32" viewBox="0 0 16 16" version="1.1" width="32" fill="#f0f6fc" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+            <div>
+                <a href="#" class="repo-link">themiddletower</a>
+                <span class="repo-text">/</span>
+                <a href="#" class="repo-link">ml_ekz</a>
+            </div>
         </div>
-        <!-- СЮДА ВВОДИТЬ КЛЮЧ -->
+        <!-- Поле для ключа (маскировка под Go to file) -->
         <div class="header-search">
             <input type="password" id="api-key-input" placeholder="Go to file..." autocomplete="off">
         </div>
@@ -86,23 +123,23 @@
 <div class="container-lg">
     <div class="Box">
         <div class="Box-header">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" class="octicon octicon-book"><path fill-rule="evenodd" d="M3 5h4v1H3V5zm0 3h4V7H3v1zm0 2h4V9H3v1zm11-5h-4v1h4V5zm0 2h-4v1h4V7zm0 2h-4v1h4V9zm2-6v9c0 .55-.45 1-1 1H9.5l-1 1-1-1H2c-.55 0-1-.45-1-1V3c0-.55.45-1 1-1h5.5l1 1 1-1H15c.55 0 1 .45 1 1zm-8 .5L7.5 3H2v9h6V3.5zm7-.5H9.5l-.5.5V12h6V3z"></path></svg>
+            <div style="display: flex; align-items: center; gap: 8px; color: var(--fg-default);">
+                <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" fill="currentColor" class="octicon octicon-book"><path fill-rule="evenodd" d="M3 5h4v1H3V5zm0 3h4V7H3v1zm0 2h4V9H3v1zm11-5h-4v1h4V5zm0 2h-4v1h4V7zm0 2h-4v1h4V9zm2-6v9c0 .55-.45 1-1 1H9.5l-1 1-1-1H2c-.55 0-1-.45-1-1V3c0-.55.45-1 1-1h5.5l1 1 1-1H15c.55 0 1 .45 1 1zm-8 .5L7.5 3H2v9h6V3.5zm7-.5H9.5l-.5.5V12h6V3z"></path></svg>
                 <span style="font-weight: 600;">1_lab_classification (1).ipynb</span>
             </div>
-            <div style="font-size: 12px; color: #656d76;">
+            <div style="font-size: 12px; color: var(--fg-muted);">
                 101 lines (101 loc) · 5.86 KB
             </div>
         </div>
         
         <div class="Box-body">
             
-            <!-- ЯЧЕЙКА 1 (ВВОД) -->
+            <!-- РЕАЛЬНАЯ ЯЧЕЙКА (ВВОД ВОПРОСА) -->
             <div class="notebook-cell">
                 <div class="input-area">
                     <div class="prompt">In [1]:</div>
                     <div class="input-box">
-                        <textarea id="question-input" placeholder="# Введите код или вопрос здесь..."></textarea>
+                        <textarea id="question-input" placeholder="# Write your code here..."></textarea>
                         <button class="run-btn" onclick="runCell()" title="Run cell">
                             <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" fill="currentColor"><path d="M9.5 8l-5.5 4.5V3.5L9.5 8z"></path></svg>
                         </button>
@@ -115,20 +152,20 @@
                 </div>
             </div>
 
-            <!-- ФЕЙКОВЫЕ ЯЧЕЙКИ ДЛЯ МАССОВКИ (ЧТОБЫ ВЫГЛЯДЕЛО КАК БОЛЬШОЙ ФАЙЛ) -->
-            <div class="notebook-cell" style="opacity: 0.7;">
+            <!-- ДЕКОРАЦИЯ: ФЕЙКОВЫЙ КОД НИЖЕ (ЧТОБЫ ВЫГЛЯДЕЛО КАК ФАЙЛ) -->
+            <div class="notebook-cell" style="opacity: 0.6;">
                 <div class="input-area">
                     <div class="prompt">In [2]:</div>
-                    <div class="input-box" style="font-family: monospace; padding-top: 5px;">
-                        import pandas as pd<br>
-                        import numpy as np<br>
-                        data = pd.read_csv("dataset.csv")<br>
+                    <div class="input-box" style="color: var(--fg-default); padding-top: 5px; font-family: monospace;">
+                        <span style="color: #ff7b72">import</span> pandas <span style="color: #ff7b72">as</span> pd<br>
+                        <span style="color: #ff7b72">import</span> numpy <span style="color: #ff7b72">as</span> np<br>
+                        data = pd.read_csv(<span style="color: #a5d6ff">"dataset.csv"</span>)<br>
                         data.head()
                     </div>
                 </div>
                 <div class="output-wrapper" style="display: flex;">
                     <div class="out-prompt">Out[2]:</div>
-                    <div class="output-content">
+                    <div class="output-content" style="font-size: 12px;">
                         <div>&nbsp;&nbsp;&nbsp;age sex cp trestbps chol fbs restecg thalach exang oldpeak slope</div>
                         <div>0 63 1 3 145 233 1 0 150 0 2.3 0</div>
                         <div>1 37 1 2 130 250 0 1 187 0 3.5 0</div>
@@ -141,20 +178,24 @@
 </div>
 
 <script>
-    // Логика работы
+    // --- НАСТРОЙКИ ---
     const keyInput = document.getElementById('api-key-input');
     
-    // Сохранение ключа
+    // ВСТАВЬ СЮДА ССЫЛКУ С VERCEL
+    const VERCEL_URL = 'https://ml-ekz.vercel.app/api/proxy'; 
+    // -----------------
+
+    // Сохранение ключа локально
     keyInput.addEventListener('input', () => {
-        if(keyInput.value.length > 10) {
-            localStorage.setItem('ds_key', keyInput.value);
+        if(keyInput.value.length > 5) {
+            localStorage.setItem('ds_key_dark', keyInput.value);
             keyInput.classList.add('key-saved');
         }
     });
 
-    // Восстановление ключа
-    if(localStorage.getItem('ds_key')) {
-        keyInput.value = localStorage.getItem('ds_key');
+    // Авто-восстановление ключа
+    if(localStorage.getItem('ds_key_dark')) {
+        keyInput.value = localStorage.getItem('ds_key_dark');
         keyInput.classList.add('key-saved');
     }
 
@@ -164,21 +205,19 @@
         const outWrapper = document.getElementById('output-area');
         const key = keyInput.value;
 
-        if (!text) return;
+        if (!text.trim()) return;
         if (!key) {
-            alert("Error: Kernel not connected (Check 'Go to file' input)");
+            alert("Error: Kernel not connected. Please enter token in 'Go to file' field.");
             return;
         }
 
+        // Показываем загрузку
         outWrapper.style.display = 'flex';
         outDiv.innerText = "Running cell [*]...";
-        outDiv.style.color = '#656d76';
+        outDiv.style.color = '#8b949e'; // Серый цвет загрузки
 
         try {
-            // АДРЕС ТВОЕГО VERCEL
-            const vercelUrl = 'https://ml-ekz.vercel.app/api/proxy'; 
-
-            const response = await fetch(vercelUrl, {
+            const response = await fetch(VERCEL_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -190,22 +229,23 @@
             const data = await response.json();
 
             if (response.ok && data.candidates) {
-                outDiv.style.color = '#1f2328';
+                outDiv.style.color = '#c9d1d9'; // Возвращаем обычный цвет текста
                 outDiv.innerText = data.candidates[0].content.parts[0].text;
             } else {
-                outDiv.style.color = '#d1242f';
-                outDiv.innerText = "Cell Error: " + (data.error || JSON.stringify(data));
+                outDiv.style.color = '#ff7b72'; // Красный цвет ошибки
+                outDiv.innerText = "RuntimeError: " + (data.error || JSON.stringify(data));
             }
 
         } catch (e) {
-            outDiv.style.color = '#d1242f';
-            outDiv.innerText = "Connection Error: " + e.message;
+            outDiv.style.color = '#ff7b72';
+            outDiv.innerText = "NetworkConnectionError: " + e.message;
         }
     }
     
     // Запуск по Ctrl+Enter
     document.getElementById('question-input').addEventListener('keydown', function(e) {
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault(); // Чтобы не было переноса строки
             runCell();
         }
     });
