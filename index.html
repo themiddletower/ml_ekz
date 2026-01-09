@@ -1,178 +1,411 @@
 <!DOCTYPE html>
-<html lang="en" data-color-mode="dark" data-light-theme="dark" data-dark-theme="dark">
+<html lang="en" data-color-mode="dark" data-light-theme="light" data-dark-theme="dark_dimmed">
 <head>
     <meta charset="utf-8">
-    <title>1_lab_classification.ipynb at main · ml_ekz</title>
+    <title>1_lab_classification.ipynb at main · Mikhail-Gavrilichev/OMGTU</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://unpkg.com/@primer/css@20.4.2/dist/primer.css" rel="stylesheet" />
     <style>
-        /* GITHUB DARK THEME COLORS */
+        /* GITHUB DARK DIMMED THEME REPLICATION */
         :root {
-            --bg-canvas: #0d1117;
-            --bg-canvas-subtle: #161b22;
-            --border-default: #30363d;
-            --fg-default: #c9d1d9;
-            --fg-muted: #8b949e;
-            --accent-fg: #58a6ff;
-            --danger-fg: #ff7b72;
-            --btn-bg: #21262d;
-            --input-bg: #010409;
+            --bg-canvas: #1c2128; /* Основной фон */
+            --bg-canvas-subtle: #22272e; /* Фон хедера */
+            --bg-canvas-inset: #1c2128; /* Фон редактора */
+            --border-default: #444c56;
+            --fg-default: #adbac7;
+            --fg-muted: #768390;
+            --accent-fg: #539bf5;
+            --danger-fg: #e5534b;
+            --btn-bg: #373e47;
+            --btn-border: #444c56;
+            --code-keyword: #ff7b72;
+            --code-string: #a5d6ff;
+            --code-function: #d2a8ff;
+            --code-comment: #768390;
         }
 
-        body { background-color: var(--bg-canvas); color: var(--fg-default); font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif; margin: 0; }
-        .container-lg { max-width: 1012px; margin: 0 auto; padding: 20px; }
+        body { background-color: var(--bg-canvas); color: var(--fg-default); font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif; margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
         
-        /* Основной контейнер */
-        .Box { background-color: var(--bg-canvas); border: 1px solid var(--border-default); border-radius: 6px; }
-        .Box-header { background-color: var(--bg-canvas-subtle); border-bottom: 1px solid var(--border-default); padding: 16px; border-top-left-radius: 6px; border-top-right-radius: 6px; display: flex; justify-content: space-between; align-items: center; }
-        .Box-body { padding: 20px; font-family: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace; font-size: 14px; line-height: 1.5; overflow-x: auto; }
+        /* HEADER STYLES */
+        .header-top { background-color: #2d333b; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; font-size: 14px; border-bottom: 1px solid var(--border-default); }
+        .header-search-box { background: #1c2128; border: 1px solid var(--border-default); border-radius: 6px; color: var(--fg-default); padding: 5px 12px; width: 300px; font-size: 12px; outline: none; }
+        .header-search-box.key-saved { border-color: #46954a; color: transparent; text-shadow: 0 0 0 #46954a; }
+
+        .repo-header { background-color: var(--bg-canvas-subtle); padding: 16px 32px 0; border-bottom: 1px solid var(--border-default); }
+        .repo-breadcrumb { font-size: 20px; color: var(--accent-fg); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .repo-breadcrumb span { color: var(--fg-default); }
         
-        /* Jupyter Notebook Styles */
-        .notebook-cell { margin-bottom: 15px; display: flex; flex-direction: column; }
-        .input-area { display: flex; align-items: flex-start; margin-bottom: 5px; }
+        /* TABS (Code, Issues...) */
+        .repo-tabs { display: flex; gap: 20px; margin-top: 10px; }
+        .tab-item { padding: 8px 12px; border-bottom: 2px solid transparent; color: var(--fg-default); display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: default; }
+        .tab-item.selected { border-bottom-color: #ec775c; font-weight: 600; }
+        .tab-item svg { fill: var(--fg-muted); }
+        .tab-item.selected svg { fill: var(--fg-default); }
+
+        /* MAIN LAYOUT */
+        .main-container { display: flex; flex: 1; overflow: hidden; max-width: 100%; }
         
-        /* Цвет In [ ]: Синий */
-        .prompt { color: var(--accent-fg); min-width: 65px; padding-top: 5px; font-family: monospace; user-select: none; font-size: 13px; }
+        /* SIDEBAR (FILE TREE) */
+        .sidebar { width: 300px; background-color: var(--bg-canvas-subtle); border-right: 1px solid var(--border-default); padding: 16px; overflow-y: auto; font-size: 13px; display: flex; flex-direction: column; gap: 5px; flex-shrink: 0; }
+        .sidebar-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; color: var(--fg-default); cursor: default; }
+        .sidebar-item:hover { background-color: #373e47; }
+        .sidebar-item.active { background-color: #373e47; position: relative; }
+        .sidebar-item.active::before { content: ""; position: absolute; left: 0; top: 6px; bottom: 6px; width: 3px; background-color: #ec775c; border-radius: 0 2px 2px 0; }
+        .folder-content { margin-left: 20px; display: flex; flex-direction: column; gap: 2px; border-left: 1px solid var(--border-default); padding-left: 5px;}
         
-        /* Цвет Out [ ]: Красный/Розовый */
-        .out-prompt { color: var(--danger-fg); min-width: 65px; font-family: monospace; user-select: none; font-size: 13px; }
+        /* CONTENT AREA */
+        .content-area { flex: 1; padding: 20px; overflow-y: auto; background-color: var(--bg-canvas); }
         
-        .input-box { flex-grow: 1; position: relative; }
+        .notebook-container { border: 1px solid var(--border-default); border-radius: 6px; background-color: var(--bg-canvas); max-width: 1000px; margin: 0 auto; }
+        .notebook-header { background-color: var(--bg-canvas-subtle); padding: 12px 16px; border-bottom: 1px solid var(--border-default); display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--fg-default); }
         
-        /* Поле ввода вопроса (выглядит как код) */
+        /* JUPYTER CELLS */
+        .notebook-body { padding: 24px 32px; font-family: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace; }
+        
+        .cell { margin-bottom: 15px; display: flex; flex-direction: column; }
+        .input-row { display: flex; gap: 10px; }
+        .prompt { color: var(--fg-muted); min-width: 50px; padding-top: 5px; text-align: right; font-size: 12px; font-family: monospace; user-select: none; }
+        
+        /* REAL INPUT AREA */
+        .code-area { flex: 1; position: relative; }
         textarea#question-input {
             width: 100%;
+            background-color: #161b22; /* Цвет фона кода */
             border: 1px solid var(--border-default);
-            background-color: var(--input-bg);
             border-radius: 6px;
+            color: var(--fg-default);
             padding: 10px;
-            font-family: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace;
-            min-height: 60px;
+            font-family: inherit;
+            font-size: 14px;
             resize: vertical;
+            min-height: 80px;
             outline: none;
-            color: var(--fg-default);
-            line-height: 1.45;
+            line-height: 1.5;
         }
-        textarea#question-input:focus { border-color: var(--accent-fg); box-shadow: 0 0 0 1px var(--accent-fg); }
-
-        /* Кнопка запуска */
-        .run-btn {
-            position: absolute;
-            right: 8px;
-            top: 8px;
-            background: transparent;
-            border: none;
-            cursor: pointer;
-            color: var(--fg-muted);
-            padding: 4px;
-            border-radius: 4px;
-        }
-        .run-btn:hover { background-color: var(--btn-bg); color: var(--fg-default); }
-
-        /* Ответ ИИ */
-        .output-wrapper { display: flex; margin-top: 5px; display: none; }
-        .output-content { white-space: pre-wrap; color: var(--fg-default); flex-grow: 1; font-family: ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace;}
-
-        /* Верхнее меню и поле ключа */
-        .header-bg { background-color: var(--bg-canvas-subtle); border-bottom: 1px solid var(--border-default); padding: 16px; margin-bottom: 20px; }
-        .repo-link { font-weight: 600; font-size: 14px; color: var(--accent-fg); text-decoration: none; }
-        .repo-text { color: var(--fg-default); margin: 0 4px; }
+        textarea#question-input:focus { border-color: var(--accent-fg); }
         
-        .header-search { position: relative; width: 300px; }
-        #api-key-input { 
-            width: 100%; 
-            padding: 5px 12px; 
-            border: 1px solid var(--border-default); 
-            border-radius: 6px; 
-            font-size: 13px; 
-            background: var(--btn-bg);
-            color: var(--fg-default);
-            outline: none;
-        }
-        #api-key-input:focus { border-color: var(--accent-fg); background: var(--input-bg); }
+        .run-btn { position: absolute; right: 10px; top: 10px; background: transparent; border: none; color: var(--fg-muted); cursor: pointer; }
+        .run-btn:hover { color: #46954a; }
+
+        /* OUTPUT AREA */
+        .output-row { display: flex; gap: 10px; margin-top: 5px; display: none; }
+        .output-content { flex: 1; color: var(--fg-default); white-space: pre-wrap; font-size: 14px; padding-top: 5px; }
         
-        /* Зеленая индикация если ключ сохранен */
-        #api-key-input.key-saved { border-color: #238636; background-color: rgba(46, 160, 67, 0.15); color: transparent; text-shadow: 0 0 0 #3fb950; }
+        /* FAKE CONTENT STYLING */
+        .fake-code { background-color: #161b22; border-radius: 6px; padding: 10px; border: 1px solid transparent; color: var(--fg-default); font-size: 14px; line-height: 1.5; }
+        .kw { color: #ff7b72; } /* Keywords */
+        .str { color: #a5d6ff; } /* Strings */
+        .func { color: #d2a8ff; } /* Functions */
+        .cls { color: #f0883e; } /* Classes */
         
-        /* Markdown элементы в ответе */
-        .output-content code { background: rgba(110, 118, 129, 0.4); padding: 3px 6px; border-radius: 4px; font-size: 85%; }
-        .output-content pre { background: var(--bg-canvas-subtle); padding: 10px; border-radius: 6px; overflow-x: auto; border: 1px solid var(--border-default); }
+        .markdown-cell { padding: 10px 0 10px 60px; color: var(--fg-default); font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif; }
+        .dataframe { border-collapse: collapse; font-size: 12px; margin-top: 10px; color: var(--fg-default); }
+        .dataframe th, .dataframe td { border: 1px solid #444c56; padding: 4px 8px; text-align: right; }
+        .dataframe th { background-color: #22272e; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<!-- Верхняя шапка -->
-<div class="header-bg">
-    <div class="container-lg" style="padding: 0; display: flex; align-items: center; justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <!-- Логотип GitHub (белый) -->
-            <svg height="32" viewBox="0 0 16 16" version="1.1" width="32" fill="#f0f6fc" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
-            <div>
-                <a href="#" class="repo-link">themiddletower</a>
-                <span class="repo-text">/</span>
-                <a href="#" class="repo-link">ml_ekz</a>
-            </div>
+<!-- GLOBAL HEADER -->
+<div class="header-top">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <svg height="32" viewBox="0 0 16 16" version="1.1" width="32" fill="#f0f6fc"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+        <input type="password" id="api-key-input" class="header-search-box" placeholder="Search or jump to..." autocomplete="off">
+        <div style="display: flex; gap: 15px; font-weight: 600;">
+            <span>Pull requests</span>
+            <span>Issues</span>
+            <span>Codespaces</span>
+            <span>Marketplace</span>
+            <span>Explore</span>
         </div>
-        <!-- Поле для ключа (маскировка под Go to file) -->
-        <div class="header-search">
-            <input type="password" id="api-key-input" placeholder="Go to file..." autocomplete="off">
-        </div>
+    </div>
+    <div>
+        <svg aria-hidden="true" height="20" viewBox="0 0 16 16" version="1.1" width="20" fill="#adbac7"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0ZM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0Z"></path></svg>
     </div>
 </div>
 
-<div class="container-lg">
-    <div class="Box">
-        <div class="Box-header">
-            <div style="display: flex; align-items: center; gap: 8px; color: var(--fg-default);">
-                <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" fill="currentColor" class="octicon octicon-book"><path fill-rule="evenodd" d="M3 5h4v1H3V5zm0 3h4V7H3v1zm0 2h4V9H3v1zm11-5h-4v1h4V5zm0 2h-4v1h4V7zm0 2h-4v1h4V9zm2-6v9c0 .55-.45 1-1 1H9.5l-1 1-1-1H2c-.55 0-1-.45-1-1V3c0-.55.45-1 1-1h5.5l1 1 1-1H15c.55 0 1 .45 1 1zm-8 .5L7.5 3H2v9h6V3.5zm7-.5H9.5l-.5.5V12h6V3z"></path></svg>
-                <span style="font-weight: 600;">1_lab_classification (1).ipynb</span>
-            </div>
-            <div style="font-size: 12px; color: var(--fg-muted);">
-                101 lines (101 loc) · 5.86 KB
-            </div>
+<!-- REPO HEADER -->
+<div class="repo-header">
+    <div class="repo-breadcrumb">
+        <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" fill="#768390"><path fill-rule="evenodd" d="M2 2.5A2.5 2.5 0 014.5 0h8.75a.75.75 0 01.75.75v12.5a.75.75 0 01-.75.75h-2.5a.75.75 0 110-1.5h1.75v-2h-8a1 1 0 00-.714 1.7.75.75 0 01-1.072 1.05A2.495 2.495 0 012 11.5v-9zm10.5-1h-8a1 1 0 00-1 1v6.708A2.486 2.486 0 014.5 9h8V1.5zM5 12.25a.25.25 0 01.25-.25h3.5a.25.25 0 01.25.25v3.25a.25.25 0 01-.4.2l-1.45-1.087a.249.249 0 00-.3 0L5.4 15.7a.25.25 0 01-.4-.2v-3.25z"></path></svg>
+        <span class="repo-link">Mikhail-Gavrilichev</span> / <span class="repo-link" style="font-weight: 600;">OMGTU</span>
+        <span style="border: 1px solid #444c56; border-radius: 10px; padding: 0 7px; font-size: 12px; color: #768390;">Public</span>
+    </div>
+    
+    <div class="repo-tabs">
+        <div class="tab-item selected">
+            <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" fill="currentColor"><path fill-rule="evenodd" d="M4.75 0a.75.75 0 01.75.75V2h4.25c.966 0 1.75.784 1.75 1.75v10.5A1.75 1.75 0 019.75 16h-4.25V15.25a.75.75 0 011.5 0v.75h4.25a.25.25 0 00.25-.25V3.75a.25.25 0 00-.25-.25H5.25v.75a.75.75 0 01-1.5 0V1.25a.75.75 0 01.75-.75zm0 7.5a.75.75 0 01.75.75v.75h4.25a.75.75 0 010 1.5H5.5v.75a.75.75 0 01-1.5 0v-3a.75.75 0 01.75-.75zM2 4.75C2 3.784 2.784 3 3.75 3h.5a.75.75 0 010 1.5h-.5a.25.25 0 00-.25.25v10.5a.25.25 0 00.25.25h.5a.75.75 0 010 1.5h-.5A1.75 1.75 0 012 15.25V4.75z"></path></svg>
+            Code
+        </div>
+        <div class="tab-item"><svg height="16" viewBox="0 0 16 16" width="16"><path d="M8 9.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"></path><path fill-rule="evenodd" d="M8 0a8 8 0 100 16A8 8 0 008 0zM1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0z"></path></svg> Issues</div>
+        <div class="tab-item"><svg height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M7.177 3.073L9.573.677A.25.25 0 0110 .854v4.792a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354zM3.75 2.5a.75.75 0 100 1.5.75.75 0 000-1.5zm-2.25.75a2.25 2.25 0 114.5 0 2.25 2.25 0 01-4.5 0zm4.084 2.905a1 1 0 00-1.083-1.083l-2.001.334a1 1 0 00-.833.833l-.334 2.001a1 1 0 001.916.319l.169-1.015 1.015-.169a1 1 0 00.151-1.22z"></path></svg> Pull requests</div>
+        <div class="tab-item"><svg height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0zM8 0a8 8 0 100 16A8 8 0 008 0zM6.379 5.227A.25.25 0 006 5.442v5.117a.25.25 0 00.379.214l4.264-2.559a.25.25 0 000-.428L6.379 5.227z"></path></svg> Actions</div>
+        <div class="tab-item"><svg height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M0 3.75C0 2.784.784 2 1.75 2h12.5c.966 0 1.75.784 1.75 1.75v8.5A1.75 1.75 0 0114.25 14H1.75A1.75 1.75 0 010 12.25v-8.5zM1.75 3.5a.25.25 0 00-.25.25v8.5c0 .138.112.25.25.25h12.5a.25.25 0 00.25-.25v-8.5a.25.25 0 00-.25-.25H1.75zM3.5 6.25a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75z"></path></svg> Projects</div>
+        <div class="tab-item"><svg height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M7.467.133a1.75 1.75 0 011.066 0l5.25 1.68A1.75 1.75 0 0115 3.48V7c0 1.566-.32 3.182-1.303 4.682-.983 1.498-2.585 2.813-5.032 3.855-.97 1.045-2.26 2.036-3.665 2.395a1.75 1.75 0 01-1.066 0c-1.405-.359-2.695-1.35-3.665-2.395C1.32 10.182 1 8.566 1 7V3.48a1.75 1.75 0 011.217-1.667l5.25-1.68z"></path></svg> Security</div>
+        <div class="tab-item"><svg height="16" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M1.5 14.25c0 .138.112.25.25.25H4v-1.25a.75.75 0 01.75-.75h2.5a.75.75 0 01.75.75v1.25h2.25a.25.25 0 00.25-.25V1.75a.25.25 0 00-.25-.25h-8.5a.25.25 0 00-.25.25v12.5zM1.75 16A1.75 1.75 0 010 14.25V1.75C0 .784.784 0 1.75 0h8.5C11.216 0 12 .784 12 1.75v12.5c0 .085-.006.168-.018.25h2.268a.25.25 0 00.25-.25V8.285a.25.25 0 00-.111-.208l-1.055-.703a.75.75 0 11.832-1.248l1.055.703c.487.325.779.871.779 1.456v5.965A1.75 1.75 0 0114.25 16h-3.5a.766.766 0 01-.197-.026c-.099.017-.2.026-.303.026h-3a.75.75 0 01-.75-.75V14h-1v1.25a.75.75 0 01-.75.75h-3.25z"></path></svg> Insights</div>
+    </div>
+</div>
+
+<div class="main-container">
+    <!-- LEFT SIDEBAR (FILE TREE) -->
+    <div class="sidebar">
+        <!-- Branch Selector -->
+        <div style="margin-bottom: 10px; display:flex; gap:10px;">
+            <button style="background: #2d333b; border: 1px solid #444c56; color: #adbac7; padding: 3px 10px; border-radius: 6px; font-size: 12px; display: flex; align-items: center; gap: 5px;">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="#768390"><path fill-rule="evenodd" d="M11.75 2.5a.75.75 0 100 1.5.75.75 0 000-1.5zm-2.25.75a2.25 2.25 0 114.5 0 2.25 2.25 0 01-4.5 0zM8 2a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 2zm0 5a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 018 7zM7.25 13a.75.75 0 100 1.5.75.75 0 000-1.5zm-2.25.75a2.25 2.25 0 114.5 0 2.25 2.25 0 01-4.5 0z"></path></svg>
+                main <span style="font-size: 10px;">▼</span>
+            </button>
+            <div style="flex:1"></div>
+            <button style="background: transparent; border: 1px solid #444c56; color: #adbac7; padding: 3px 8px; border-radius: 6px;">Go to file</button>
+        </div>
+
+        <!-- FOLDERS -->
+        <div class="sidebar-item">
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="#54aeff"><path d="M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0 0 16 13.25v-8.5A1.75 1.75 0 0 0 14.25 3H7.5a.25.25 0 0 1-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1H1.75Z"></path></svg>
+            AI
+        </div>
+        <div class="sidebar-item">
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="#54aeff"><path d="M1.75 1A1.75 1.75 0 0 0 0 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0 0 16 13.25v-8.5A1.75 1.75 0 0 0 14.25 3H7.5a.25.25 0 0 1-.2-.1l-.9-1.2C6.07 1.26 5.55 1 5 1H1.75Z"></path></svg>
+            Demo_ex
         </div>
         
-        <div class="Box-body">
+        <!-- FILES inside Demo_ex (Simulated) -->
+        <div class="folder-content">
+            <div class="sidebar-item active">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="#768390"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"></path></svg>
+                1_lab_classification.ipynb
+            </div>
+            <div class="sidebar-item">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="#768390"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"></path></svg>
+                1_lab_regression.ipynb
+            </div>
+            <div class="sidebar-item">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="#768390"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"></path></svg>
+                2_lab_regression.ipynb
+            </div>
+            <div class="sidebar-item">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="#768390"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"></path></svg>
+                3_lab_classification.ipynb
+            </div>
+            <div class="sidebar-item">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="#768390"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"></path></svg>
+                4_lab.ipynb
+            </div>
+            <div class="sidebar-item">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="#768390"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"></path></svg>
+                Demo.ipynb
+            </div>
+            <div class="sidebar-item">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="#768390"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"></path></svg>
+                PR_RGR.ipynb
+            </div>
+            <div class="sidebar-item">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="#768390"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"></path></svg>
+                Project.ipynb
+            </div>
+            <div class="sidebar-item">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="#768390"><path d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l2.914 2.914c.329.328.513.773.513 1.237v9.586A1.75 1.75 0 0 1 13.25 16h-9.5A1.75 1.75 0 0 1 2 14.25Zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h9.5a.25.25 0 0 0 .25-.25V6h-2.75A1.75 1.75 0 0 1 9 4.25V1.5Zm6.75.062V4.25c0 .138.112.25.25.25h2.688l-.011-.013-2.914-2.914-.013-.011Z"></path></svg>
+                app.py
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="content-area">
+        <div style="font-size: 13px; color: #768390; margin-bottom: 10px;">
+            <a href="#" style="color: #539bf5; text-decoration: none;">OMGTU</a> / <a href="#" style="color: #539bf5; text-decoration: none;">Demo_ex</a> / <strong>1_lab_classification.ipynb</strong>
+        </div>
+
+        <div class="notebook-container">
+            <!-- Notebook Header -->
+            <div class="notebook-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <img src="https://avatars.githubusercontent.com/u/253773120?v=4" width="20" height="20" style="border-radius: 50%;">
+                    <span style="font-weight: 600;">Mikhail-Gavrilichev</span>
+                    <span style="color: #768390;">Add files via upload</span>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <span>82f1cf1 • 19 hours ago</span>
+                    <svg height="16" viewBox="0 0 16 16" width="16" fill="#768390"><path fill-rule="evenodd" d="M1.679 7.932c.412-.621 1.242-1.75 2.366-2.717C5.175 4.242 6.527 3.5 8 3.5c1.473 0 2.824.742 3.955 1.715 1.124.967 1.954 2.096 2.366 2.717a.119.119 0 010 .136c-.412.621-1.242 1.75-2.366 2.717C10.825 11.758 9.473 12.5 8 12.5c-1.473 0-2.824-.742-3.955-1.715C2.92 9.818 2.09 8.69 1.679 8.068a.119.119 0 010-.136zM8 2c-1.981 0-3.67.992-4.933 2.078C1.797 5.169.88 6.423.43 7.1a1.619 1.619 0 000 1.798c.45.678 1.367 1.932 2.637 3.022C4.33 13.008 6.019 14 8 14c1.981 0 3.67-.992 4.933-2.078 1.27-1.091 2.187-2.345 2.637-3.022a1.619 1.619 0 000-1.798c-.45-.678-1.367-1.932-2.637-3.022C11.67 2.992 9.981 2 8 2zm0 8a2 2 0 100-4 2 2 0 000 4z"></path></svg>
+                    <span>History</span>
+                </div>
+            </div>
             
-            <!-- РЕАЛЬНАЯ ЯЧЕЙКА (ВВОД ВОПРОСА) -->
-            <div class="notebook-cell">
-                <div class="input-area">
-                    <div class="prompt">In [1]:</div>
-                    <div class="input-box">
-                        <textarea id="question-input" placeholder="# Write your code here..."></textarea>
-                        <button class="run-btn" onclick="runCell()" title="Run cell">
-                            <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" fill="currentColor"><path d="M9.5 8l-5.5 4.5V3.5L9.5 8z"></path></svg>
-                        </button>
-                    </div>
-                </div>
+            <div style="background-color: #1c2128; border-bottom: 1px solid var(--border-default); padding: 8px 16px; display: flex; gap: 8px;">
+                <button style="background: #373e47; color: #c9d1d9; border: 1px solid #444c56; border-radius: 6px; padding: 3px 10px; font-size: 12px; font-weight: 600;">Preview</button>
+                <button style="background: transparent; color: #768390; border: none; padding: 3px 10px; font-size: 12px;">Code</button>
+                <button style="background: transparent; color: #768390; border: none; padding: 3px 10px; font-size: 12px;">Blame</button>
+                <div style="flex:1"></div>
+                <button style="background: transparent; color: #768390; border: 1px solid #444c56; border-radius: 6px; padding: 3px 10px; font-size: 12px;">Raw</button>
+            </div>
+
+            <!-- JUPYTER BODY -->
+            <div class="notebook-body">
                 
-                <div class="output-wrapper" id="output-area">
-                    <div class="out-prompt">Out[1]:</div>
-                    <div class="output-content" id="response-text"></div>
-                </div>
-            </div>
-
-            <!-- ДЕКОРАЦИЯ: ФЕЙКОВЫЙ КОД НИЖЕ (ЧТОБЫ ВЫГЛЯДЕЛО КАК ФАЙЛ) -->
-            <div class="notebook-cell" style="opacity: 0.6;">
-                <div class="input-area">
-                    <div class="prompt">In [2]:</div>
-                    <div class="input-box" style="color: var(--fg-default); padding-top: 5px; font-family: monospace;">
-                        <span style="color: #ff7b72">import</span> pandas <span style="color: #ff7b72">as</span> pd<br>
-                        <span style="color: #ff7b72">import</span> numpy <span style="color: #ff7b72">as</span> np<br>
-                        data = pd.read_csv(<span style="color: #a5d6ff">"dataset.csv"</span>)<br>
-                        data.head()
+                <!-- MARKDOWN HEADER -->
+                <div class="cell">
+                    <div class="markdown-cell" style="text-align: center; font-size: 24px; margin-bottom: 20px;">
+                        Инициализация проекта
                     </div>
                 </div>
-                <div class="output-wrapper" style="display: flex;">
-                    <div class="out-prompt">Out[2]:</div>
-                    <div class="output-content" style="font-size: 12px;">
-                        <div>&nbsp;&nbsp;&nbsp;age sex cp trestbps chol fbs restecg thalach exang oldpeak slope</div>
-                        <div>0 63 1 3 145 233 1 0 150 0 2.3 0</div>
-                        <div>1 37 1 2 130 250 0 1 187 0 3.5 0</div>
+
+                <!-- REAL INPUT CELL (THE CHAT) -->
+                <div class="cell">
+                    <div class="input-row">
+                        <div class="prompt">In [1]:</div>
+                        <div class="code-area">
+                            <textarea id="question-input" placeholder="# Write code or prompt here..."></textarea>
+                            <button class="run-btn" onclick="runCell()" title="Run cell">
+                                <svg aria-hidden="true" height="16" viewBox="0 0 16 16" width="16" fill="currentColor"><path d="M9.5 8l-5.5 4.5V3.5L9.5 8z"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="output-row" id="output-area">
+                        <div class="prompt" style="color: #e5534b;">Out[1]:</div>
+                        <div class="output-content" id="response-text"></div>
                     </div>
                 </div>
-            </div>
 
+                <!-- DUMMY CONTENT -->
+                <div class="cell">
+                    <div class="input-row">
+                        <div class="prompt">In [2]:</div>
+                        <div class="code-area">
+                            <div class="fake-code">
+                                <span class="kw">import</span> pandas <span class="kw">as</span> pd<br>
+                                <span class="kw">import</span> matplotlib.pyplot <span class="kw">as</span> plt<br>
+                                <span class="kw">import</span> numpy <span class="kw">as</span> np<br>
+                                <span class="kw">import</span> seaborn <span class="kw">as</span> sns<br>
+                                <span class="kw">import</span> warnings<br>
+                                <span class="kw">import</span> ucimlrepo<br>
+                                <span class="kw">from</span> ucimlrepo <span class="kw">import</span> fetch_ucirepo<br>
+                                <br>
+                                <span class="code-comment"># fetch dataset</span><br>
+                                data = fetch_ucirepo(id=<span class="str">45</span>)<br>
+                                <br>
+                                <span class="code-comment"># data (as pandas dataframes)</span><br>
+                                X = data.data.features<br>
+                                y = data.data.targets<br>
+                                <br>
+                                <span class="code-comment"># metadata</span><br>
+                                data.metadata<br>
+                                <br>
+                                <span class="code-comment"># variable information</span><br>
+                                data.variables<br>
+                                <br>
+                                data = pd.concat([X, y], axis=<span class="str">1</span>)<br>
+                                data.head()
+                            </div>
+                        </div>
+                    </div>
+                    <div class="output-row" style="display: flex;">
+                        <div class="prompt" style="color: #e5534b;">Out[2]:</div>
+                        <div class="output-content">
+                            <table class="dataframe">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>age</th>
+                                        <th>sex</th>
+                                        <th>cp</th>
+                                        <th>trestbps</th>
+                                        <th>chol</th>
+                                        <th>fbs</th>
+                                        <th>restecg</th>
+                                        <th>thalach</th>
+                                        <th>exang</th>
+                                        <th>target</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th>0</th>
+                                        <td>63</td>
+                                        <td>1</td>
+                                        <td>3</td>
+                                        <td>145</td>
+                                        <td>233</td>
+                                        <td>1</td>
+                                        <td>0</td>
+                                        <td>150</td>
+                                        <td>0</td>
+                                        <td>1</td>
+                                    </tr>
+                                    <tr>
+                                        <th>1</th>
+                                        <td>37</td>
+                                        <td>1</td>
+                                        <td>2</td>
+                                        <td>130</td>
+                                        <td>250</td>
+                                        <td>0</td>
+                                        <td>1</td>
+                                        <td>187</td>
+                                        <td>0</td>
+                                        <td>1</td>
+                                    </tr>
+                                    <tr>
+                                        <th>2</th>
+                                        <td>41</td>
+                                        <td>0</td>
+                                        <td>1</td>
+                                        <td>130</td>
+                                        <td>204</td>
+                                        <td>0</td>
+                                        <td>0</td>
+                                        <td>172</td>
+                                        <td>0</td>
+                                        <td>1</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cell">
+                    <div class="input-row">
+                        <div class="prompt">In [3]:</div>
+                        <div class="code-area">
+                            <div class="fake-code">
+                                <span class="kw">print</span>(<span class="str">f"Dataset shape: {data.shape}"</span>)<br>
+                                data.info()
+                            </div>
+                        </div>
+                    </div>
+                    <div class="output-row" style="display: flex;">
+                        <div class="prompt" style="color: transparent;"></div>
+                        <div class="output-content" style="font-family: monospace; font-size: 12px; color: #adbac7;">
+                            Dataset shape: (303, 14)<br>
+                            &lt;class 'pandas.core.frame.DataFrame'&gt;<br>
+                            RangeIndex: 303 entries, 0 to 302<br>
+                            Data columns (total 14 columns):<br>
+                             #   Column    Non-Null Count  Dtype  <br>
+                            ---  ------    --------------  -----  <br>
+                             0   age       303 non-null    int64  <br>
+                             1   sex       303 non-null    int64  <br>
+                             2   cp        303 non-null    int64  <br>
+                             3   trestbps  303 non-null    int64  <br>
+                             4   chol      303 non-null    int64  <br>
+                             ...
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cell">
+                    <div class="input-row">
+                        <div class="prompt">In [4]:</div>
+                        <div class="code-area">
+                            <div class="fake-code">
+                                <span class="code-comment"># Check for missing values</span><br>
+                                data.isnull().sum()
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 </div>
@@ -207,14 +440,14 @@
 
         if (!text.trim()) return;
         if (!key) {
-            alert("Error: Kernel not connected. Please enter token in 'Go to file' field.");
+            alert("Error: Kernel connection failed. Please check your token.");
             return;
         }
 
         // Показываем загрузку
         outWrapper.style.display = 'flex';
         outDiv.innerText = "Running cell [*]...";
-        outDiv.style.color = '#8b949e'; // Серый цвет загрузки
+        outDiv.style.color = '#768390'; 
 
         try {
             const response = await fetch(VERCEL_URL, {
@@ -229,23 +462,23 @@
             const data = await response.json();
 
             if (response.ok && data.candidates) {
-                outDiv.style.color = '#c9d1d9'; // Возвращаем обычный цвет текста
+                outDiv.style.color = '#adbac7'; 
                 outDiv.innerText = data.candidates[0].content.parts[0].text;
             } else {
-                outDiv.style.color = '#ff7b72'; // Красный цвет ошибки
+                outDiv.style.color = '#e5534b'; 
                 outDiv.innerText = "RuntimeError: " + (data.error || JSON.stringify(data));
             }
 
         } catch (e) {
-            outDiv.style.color = '#ff7b72';
-            outDiv.innerText = "NetworkConnectionError: " + e.message;
+            outDiv.style.color = '#e5534b';
+            outDiv.innerText = "ConnectionError: " + e.message;
         }
     }
     
     // Запуск по Ctrl+Enter
     document.getElementById('question-input').addEventListener('keydown', function(e) {
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-            e.preventDefault(); // Чтобы не было переноса строки
+            e.preventDefault(); 
             runCell();
         }
     });
